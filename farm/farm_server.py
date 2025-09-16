@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from agntcy_app_sdk.protocols.a2a.protocol import A2AProtocol
 from agent_executor import FarmAgentExecutor
 from card import AGENT_CARD
-from config.config import FARM_AGENT_HOST, FARM_AGENT_PORT
+from config.config import INTERSIGHT_AGENT_HOST, INTERSIGHT_AGENT_PORT
 from config.config import DEFAULT_MESSAGE_TRANSPORT, TRANSPORT_SERVER_ENDPOINT
 
 load_dotenv()
@@ -45,7 +45,7 @@ async def main():
     Environment Variables:
     - DEFAULT_MESSAGE_TRANSPORT: Transport protocol name ("A2A", "slim", etc.)
     - TRANSPORT_SERVER_ENDPOINT: Endpoint for the external transport (if used)
-    - FARM_AGENT_HOST / FARM_AGENT_PORT: Host and port for local HTTP server (if "A2A" is selected)
+    - INTERSIGHT_AGENT_HOST / INTERSIGHT_AGENT_PORT: Host and port for local HTTP server (if "A2A" is selected)
     """
 
 
@@ -59,7 +59,7 @@ async def main():
     )
 
     if DEFAULT_MESSAGE_TRANSPORT == "A2A":
-        config = Config(app=server.build(), host=FARM_AGENT_HOST, port=FARM_AGENT_PORT, loop="asyncio")
+        config = Config(app=server.build(), host=INTERSIGHT_AGENT_HOST, port=INTERSIGHT_AGENT_PORT, loop="asyncio")
         userver = Server(config)
         await userver.serve()
     else:

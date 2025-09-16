@@ -1,14 +1,14 @@
 services:
   farm-server:
     build:
-      context: ../../..
-      dockerfile: coffeeAGNTCY/coffee_agents/corto/docker/Dockerfile.farm
-    image: ghcr.io/agntcy/coffee-agntcy/corto-farm:latest
+      context: .
+      dockerfile: docker/Dockerfile.farm
+    # image: ghcr.io/agntcy/coffee-agntcy/corto-farm:latest
     container_name: farm-server
     platform: linux/amd64
     environment:
-      - FARM_AGENT_HOST=farm-server
-      - FARM_AGENT_PORT=9999
+      - INTERSIGHT_AGENT_HOST=farm-server
+      - INTERSIGHT_AGENT_PORT=9999
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
@@ -47,14 +47,14 @@ services:
   # Exchange server App (farm client)
   exchange-server:
     build:
-      context: ../../..
-      dockerfile: coffeeAGNTCY/coffee_agents/corto/docker/Dockerfile.exchange
-    image: ghcr.io/agntcy/coffee-agntcy/corto-exchange:latest
+      context: .
+      dockerfile: docker/Dockerfile.exchange
+    #image: ghcr.io/agntcy/coffee-agntcy/corto-exchange:latest
     container_name: exchange-server-corto
     platform: linux/amd64
     environment:
-      - FARM_AGENT_HOST=farm-server
-      - FARM_AGENT_PORT=9999
+      - INTERSIGHT_AGENT_HOST=farm-server
+      - INTERSIGHT_AGENT_PORT=9999
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
@@ -73,9 +73,9 @@ services:
 
   ui:
     build:
-      context: ../../..
-      dockerfile: coffeeAGNTCY/coffee_agents/corto/docker/Dockerfile.ui
-    image: ghcr.io/agntcy/coffee-agntcy/corto-ui:latest
+      context: .
+      dockerfile: docker/Dockerfile.ui
+    # image: ghcr.io/agntcy/coffee-agntcy/corto-ui:latest
     container_name: ui-corto
     platform: linux/amd64
     environment:

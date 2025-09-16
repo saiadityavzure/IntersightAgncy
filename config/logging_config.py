@@ -1,7 +1,3 @@
-# Copyright AGNTCY Contributors (https://github.com/agntcy)
-# SPDX-License-Identifier: Apache-2.0
-
-# logging_config.py
 import logging
 
 from config.config import LOGGING_LEVEL

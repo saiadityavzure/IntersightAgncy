@@ -460,7 +460,7 @@ requires-dist = [
     { name = "agntcy-app-sdk", specifier = "==0.2.2" },
     { name = "autogen-core", marker = "extra == 'dev'", specifier = ">=0.4.3,<0.5" },
     { name = "click", specifier = ">=8.1.8" },
-    { name = "cnoe-agent-utils", specifier = "==0.2.2" },
+    { name = "cnoe-agent-utils", extras = ["openai"], specifier = "==0.2.2" },
     { name = "coloredlogs", specifier = ">=15.0.1" },
     { name = "coloredlogs", marker = "extra == 'dev'", specifier = ">=15.0.1,<16" },
     { name = "dotenv", specifier = ">=0.9.9" },
