@@ -23,14 +23,14 @@ from pydantic import BaseModel
 
 class IntersightProfileInput(BaseModel):
     """
-    Represents the input for the Intersight profile estimation.
+    Represents the input for the Intersight Virtual Machine Creation.
     This class is used to structure the input payload for the A2A agent.
     """
     prompt: str
 
 class IntersightProfileOutput(BaseModel):
     """
-    Represents the output of the Intersight profile estimation.
+    Represents the output of the Intersight Virtual Machine Creation.
     This class is used to structure the response from the A2A agent.
     """
     configuration_summary: str
