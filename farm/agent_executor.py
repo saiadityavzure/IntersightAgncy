@@ -100,7 +100,7 @@ class IntersightAgentExecutor(AgentExecutor):
                 await event_queue.enqueue_event(message)
                 return
 
-            flavor = output.get("flavor_notes", "No flavor profile returned")
+            flavor = output.get("intersight_response", "No flavor profile returned")
             logger.info("Flavor profile generated: %s", flavor)
             await event_queue.enqueue_event(new_agent_text_message(flavor))
         except Exception as e:
