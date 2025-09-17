@@ -1,6 +1,3 @@
-# Copyright AGNTCY Contributors (https://github.com/agntcy)
-# SPDX-License-Identifier: Apache-2.0
-
 import os
 
 from cnoe_agent_utils import LLMFactory

@@ -11,12 +11,28 @@ from langgraph_supervisor import create_supervisor
 from ioa_observe.sdk.decorators import agent, graph
 
 from common.llm import get_llm
-from graph.tools import FlavorProfileTool
+from graph.tools import IntersightApiTool
 
-from farm.card import AGENT_CARD as farm_agent_card
+from farm.card import AGENT_CARD
 
-logger = logging.getLogger("corto.supervisor.graph")
+logger = logging.getLogger("intersight.supervisor.graph")
 
+PROMPT1="""You are a routing-only supervisor agent. You are never allowed to answer user questions yourself.
+Your behavior is strictly rule-based and must follow this logic:
+1. If the user prompt includes anything about Cisco Intersight server profiles, domain profiles, policies, or API queries:
+Route the task to worker agent 'intersight_query_worker'
+Use the associated tool intersight_api_tool
+Do not answer or describe anything about Intersight yourself
+2. If the user prompt is not about Intersight (server profiles, domain profiles, policies, or API queries):
+Respond with this exact message:
+"I'm sorry, I cannot assist with that request. Please ask about Cisco Intersight profiles, policies, or APIs."
+3. If the worker agent returns control and the result is successful with no errors:
+Return an empty response and end the conversation
+4. If the worker agent returns an error:
+Return the same error message verbatim
+You must never generate any original content, answers, or descriptions.
+If you fail to match the user's input to rule 1, default to rule 2.
+"""
 
 @agent(name="exchange_agent")
 class ExchangeGraph:
@@ -37,39 +53,23 @@ class ExchangeGraph:
         CompiledGraph: A fully compiled LangGraph instance ready for execution.
         """
         model = get_llm()
+        logger.debug(f"Model is : {model}")
 
         # initialize the flavor profile tool(used for coffee flavor, taste, or sensory profile estimation) with the farm agent card
-        flavor_profile_tool = FlavorProfileTool(
-            remote_agent_card=farm_agent_card,
+        intersight_api_tool = IntersightApiTool(
+            remote_agent_card=AGENT_CARD,
         )
         
         #  worker agent- always responsible for flavor, taste, or sensory profile of coffee queries
-        get_flavor_profile_a2a_agent = create_react_agent(
+        intersight_a2a_agent = create_react_agent(
             model=model,
-            tools=[flavor_profile_tool],  # list of tools for the agent
-            name="get_flavor_profile_via_a2a",
+            tools=[intersight_api_tool],  # list of tools for the agent
+            name="intersight_query_worker",
         )
         graph = create_supervisor(
             model=model,
-            agents=[get_flavor_profile_a2a_agent],  # worker agents list
-            prompt=(
-            "You are a routing-only supervisor agent. You are never allowed to answer user questions yourself.\n"
-            "Your behavior is strictly rule-based and must follow this logic:\n"
-            "1. If the user prompt includes anything about coffee flavor, taste, or sensory profile:\n"
-            "    - Route the task to worker agent 'get_flavor_profile_via_a2a'\n"
-            "    - Use the associated tool `flavor_profile_tool`\n"
-            "    - Do not answer or describe anything about coffee flavor\n"
-            "2. If the user prompt is not about flavor, taste, or sensory profile:\n"
-            "    - Respond with this exact message:\n"
-            "      \"I'm sorry, I cannot assist with that request. Please ask about coffee flavor or taste.\"\n"
-            "3. If the worker agent returns control and the result is successful with no errors:\n"
-            "    - Return an empty response and end the conversation\n"
-            "4. If the worker agent returns an error:\n"
-            "    - Return the same error message verbatim\n"
-            "\n"
-            "You must never generate any original content, answers, or descriptions.\n"
-            "If you fail to match the user's input to rule 1, default to rule 2.\n"
-            ),
+            agents=[intersight_a2a_agent],  # worker agents list
+            prompt=PROMPT1,
             add_handoff_back_messages=False,
             output_mode="last_message",
         ).compile()

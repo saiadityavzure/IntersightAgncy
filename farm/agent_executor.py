@@ -1,6 +1,3 @@
-# Copyright AGNTCY Contributors (https://github.com/agntcy)
-# SPDX-License-Identifier: Apache-2.0
-
 import logging
 
 from a2a.server.agent_execution import AgentExecutor, RequestContext
@@ -17,22 +14,22 @@ from a2a.utils import (
 )
 from a2a.utils.errors import ServerError
 
-from agent import FarmAgent
+from agent import IntersightDataAgent
 
 logger = logging.getLogger("corto.farm_agent.a2a_executor")
 
-class FarmAgentExecutor(AgentExecutor):
+class IntersightAgentExecutor(AgentExecutor):
     """
     This class extends the base `AgentExecutor` and executes requests on behalf of the Farm 
     Agent in an Agent-to-Agent (A2A) architecture.
 
     This executor handles user prompts related to coffee farming and generates flavor profiles
-    using a language model. It validates incoming requests, interacts with the FarmAgent for 
+    using a language model. It validates incoming requests, interacts with the IntersightDataAgent for 
     flavor generation, and publishes appropriate events (e.g., messages or tasks) to the event queue.
 
     """
     def __init__(self):
-        self.agent = FarmAgent()
+        self.agent = IntersightDataAgent()
 
     def _validate_request(self, context: RequestContext) -> JSONRPCResponse | None:
         """
@@ -58,9 +55,9 @@ class FarmAgentExecutor(AgentExecutor):
         event_queue: EventQueue,
     ) -> None:
         """
-        Processes a user prompt to generate a coffee flavor profile via the FarmAgent.
+        Processes a user prompt to generate a coffee flavor profile via the IntersightDataAgent.
 
-        This method extracts the user prompt from the request context, invokes the FarmAgent
+        This method extracts the user prompt from the request context, invokes the IntersightDataAgent
         asynchronously to get a flavor profile, and publishes the result as an event.
         If the prompt is invalid or processing fails, it returns an error message.
 

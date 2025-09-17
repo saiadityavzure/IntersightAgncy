@@ -17,21 +17,21 @@ from a2a.types import (
 )
 
 from langchain_core.tools import BaseTool
-from graph.models import FlavorProfileInput, FlavorProfileOutput
+from graph.models import IntersightProfileInput, IntersightProfileOutput
 from graph.shared import get_factory
 from agntcy_app_sdk.protocols.a2a.protocol import A2AProtocol
 from ioa_observe.sdk.decorators import tool
 
 from config.config import DEFAULT_MESSAGE_TRANSPORT, TRANSPORT_SERVER_ENDPOINT
 
-logger = logging.getLogger("corto.supervisor.tools")
+logger = logging.getLogger("intersight.supervisor.tools")
 
-class FlavorProfileTool(BaseTool):
+class IntersightApiTool(BaseTool):
     """
-    This tool sends a prompt to the A2A agent and returns the flavor profile estimation.
+    This tool sends a prompt to the A2A agent and returns the intersight data.
     """
-    name: str = "get_flavor_profile"
-    description: str = "Estimates the flavor profile of coffee beans based on a given prompt."
+    name: str = "get_intersight_data"
+    description: str = "Fetchs the information about the Intersight Data"
 
     # private attribute to store client connection
     _client = PrivateAttr()
@@ -61,17 +61,17 @@ class FlavorProfileTool(BaseTool):
         
         logger.info("Connected to remote agent")
 
-    def _run(self, input: FlavorProfileInput) -> float:
+    def _run(self, input: IntersightProfileInput) -> float:
         raise NotImplementedError("Use _arun for async execution.")
 
-    async def _arun(self, input: FlavorProfileInput, **kwargs: Any) -> float:
-        logger.info("FlavorProfileTool has been called.")
+    async def _arun(self, input: IntersightProfileInput, **kwargs: Any) -> float:
+        logger.info("IntersightApiTool has been called.")
         try:
             if not input.get('prompt'):
                 logger.error("Invalid input: Prompt must be a non-empty string.")
                 raise ValueError("Invalid input: Prompt must be a non-empty string.")
             resp = await self.send_message(input.get('prompt'))
-            return FlavorProfileOutput(flavor_profile=resp)
+            return IntersightProfileOutput(configuration_summary=resp)
         except Exception as e:
             logger.error(f"Failed to get flavor profile: {str(e)}")
             raise RuntimeError(f"Failed to get flavor profile: {str(e)}")
@@ -93,9 +93,9 @@ class FlavorProfileTool(BaseTool):
         request = SendMessageRequest(
             id=str(uuid4()),
             params=MessageSendParams(
-                skill_id="estimate_flavor",
-                sender_id="coffee-exchange-agent",
-                receiver_id="flavor-profile-farm-agent",
+                skill_id="estimate_intersight_profile",
+                sender_id="intersight-exchange-agent",
+                receiver_id="intersight-data-agent",
                 message=Message(
                     message_id=str(uuid4()),
                     role=Role.user,

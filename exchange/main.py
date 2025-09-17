@@ -15,11 +15,11 @@ from graph.graph import ExchangeGraph
 from ioa_observe.sdk.tracing import session_start
 
 setup_logging()
-logger = logging.getLogger("corto.supervisor.main")
+logger = logging.getLogger("intersight.supervisor.main")
 load_dotenv()
 
 # Initialize the shared agntcy factory with tracing enabled
-shared.set_factory(AgntcyFactory("corto.exchange", enable_tracing=True))
+shared.set_factory(AgntcyFactory("intersight.exchange", enable_tracing=True))
 
 app = FastAPI()
 # Add CORS middleware

@@ -10,7 +10,7 @@ from a2a.server.request_handlers import DefaultRequestHandler
 from agntcy_app_sdk.factory import AgntcyFactory
 from dotenv import load_dotenv
 from agntcy_app_sdk.protocols.a2a.protocol import A2AProtocol
-from agent_executor import FarmAgentExecutor
+from agent_executor import IntersightAgentExecutor
 from card import AGENT_CARD
 from config.config import INTERSIGHT_AGENT_HOST, INTERSIGHT_AGENT_PORT
 from config.config import DEFAULT_MESSAGE_TRANSPORT, TRANSPORT_SERVER_ENDPOINT
@@ -18,13 +18,13 @@ from config.config import DEFAULT_MESSAGE_TRANSPORT, TRANSPORT_SERVER_ENDPOINT
 load_dotenv()
 
 # Initialize a multi-protocol, multi-transport gateway factory.
-factory = AgntcyFactory("corto.farm_agent", enable_tracing=True)
+factory = AgntcyFactory("intersight.farm_agent", enable_tracing=True)
 
 async def main():
     """
     Starts the farm agent server using the specified transport mechanism.
 
-    This function initializes a FarmAgentExecutor wrapped with a DefaultRequestHandler,
+    This function initializes a IntersightAgentExecutor wrapped with a DefaultRequestHandler,
     and serves it using an A2AStarletteApplication. The agent is exposed via either:
 
     1. An HTTP server using native A2A (Agent-to-Agent) protocol via Starlette, or
@@ -50,7 +50,7 @@ async def main():
 
 
     request_handler = DefaultRequestHandler(
-        agent_executor=FarmAgentExecutor(),
+        agent_executor=IntersightAgentExecutor(),
         task_store=InMemoryTaskStore(),
     )
 

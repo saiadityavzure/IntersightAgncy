@@ -12,5 +12,5 @@ def set_factory(factory: AgntcyFactory):
 
 def get_factory() -> AgntcyFactory:
     if _factory is None:
-        return AgntcyFactory("corto.exchange", enable_tracing=True)
+        return AgntcyFactory("intersight.exchange", enable_tracing=True)
     return _factory
