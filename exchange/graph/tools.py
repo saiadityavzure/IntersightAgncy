@@ -26,14 +26,13 @@ from config.config import DEFAULT_MESSAGE_TRANSPORT, TRANSPORT_SERVER_ENDPOINT
 
 logger = logging.getLogger("intersight.supervisor.tools")
 
-class IntersightApiTool(BaseTool):
+class VMManageAgent2Tool(BaseTool):
     """
-    This tool sends a prompt to the A2A agent and returns the intersight data.
+    This tool sends a prompt to the A2A agent and manages Virtual Machine operations.
     """
-    name: str = "get_intersight_data"
-    description: str = "Fetchs the information about the Intersight Data"
+    name: str = "virtual_machine_management_agent"
+    description: str = "Handles Virtual Machine management tasks such as only provisioning a Vitual Machine(VM)."
 
-    # private attribute to store client connection
     _client = PrivateAttr()
     
     def __init__(self, remote_agent_card: AgentCard, **kwargs: Any):
@@ -65,7 +64,7 @@ class IntersightApiTool(BaseTool):
         raise NotImplementedError("Use _arun for async execution.")
 
     async def _arun(self, input: IntersightProfileInput, **kwargs: Any) -> float:
-        logger.info("IntersightApiTool has been called.")
+        logger.info("VMManageAgent2Tool has been called.")
         try:
             if not input.get('prompt'):
                 logger.error("Invalid input: Prompt must be a non-empty string.")
@@ -93,9 +92,9 @@ class IntersightApiTool(BaseTool):
         request = SendMessageRequest(
             id=str(uuid4()),
             params=MessageSendParams(
-                skill_id="estimate_intersight_profile",
-                sender_id="intersight-exchange-agent",
-                receiver_id="intersight-data-agent",
+                skill_id="create_virtual_machine",
+                sender_id="vm-supervisor-agent",
+                receiver_id="virtual-machine-agent",
                 message=Message(
                     message_id=str(uuid4()),
                     role=Role.user,

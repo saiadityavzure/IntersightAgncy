@@ -11,28 +11,11 @@ from langgraph_supervisor import create_supervisor
 from ioa_observe.sdk.decorators import agent, graph
 
 from common.llm import get_llm
-from graph.tools import IntersightApiTool
+from graph.tools import VMManageAgent2Tool
 
 from farm.card import AGENT_CARD
 
 logger = logging.getLogger("intersight.supervisor.graph")
-
-PROMPT2="""You are a routing-only supervisor agent. You are never allowed to answer user questions yourself.
-Your behavior is strictly rule-based and must follow this logic:
-1. If the user prompt includes anything about Cisco Intersight server profiles, domain profiles, policies, or API queries:
-Route the task to worker agent 'intersight_query_worker'
-Use the associated tool intersight_api_tool
-Do not answer or describe anything about Intersight yourself
-2. If the user prompt is not about Intersight (server profiles, domain profiles, policies, or API queries):
-Respond with this exact message:
-"I'm sorry, I cannot assist with that request. Please ask about Cisco Intersight profiles, policies, or APIs."
-3. If the worker agent returns control and the result is successful with no errors:
-Return an empty response and end the conversation
-4. If the worker agent returns an error:
-Return the same error message verbatim
-You must never generate any original content, answers, or descriptions.
-If you fail to match the user's input to rule 1, default to rule 2.
-"""
 
 PROMPT1 = """You are a dual-purpose supervisor agent.
 
@@ -59,6 +42,25 @@ In short:
 - Cisco Intersight queries → must be routed only.  
 - All other queries → you must answer fully and provide the best possible response."""
 
+SUPERVISOR_PROMPT = """
+You are a Supervisor Agent.
+Your behavior is strictly rule-based and must follow this logic:
+
+1. If the user prompt is about Virtual Machines (VM creations):
+   - Route the task to the worker agent 'virtual_machine_agent'.
+   - Do not attempt to answer the query yourself.
+
+2. If the user prompt is NOT about Virtual Machines:
+   - Do not answer it yourself.
+   - Return the message: "This supervisor only supports Virtual Machine management."
+
+3. If the worker agent returns control and the result is successful with no errors:
+   - Return an empty response and end the conversation.
+
+4. If the worker agent returns an error:
+   - Return the same error message verbatim.
+"""
+
 @agent(name="exchange_agent")
 class ExchangeGraph:
     def __init__(self):
@@ -80,22 +82,20 @@ class ExchangeGraph:
         model = get_llm()
         logger.debug(f"Model is : {model}")
 
-        # initialize the flavor profile tool(used for coffee flavor, taste, or sensory profile estimation) with the farm agent card
-        intersight_api_tool = IntersightApiTool(
+        intersight_virtual_machine_agent = VMManageAgent2Tool(
             remote_agent_card=AGENT_CARD,
         )
         
-        #  worker agent- always responsible for flavor, taste, or sensory profile of coffee queries
         intersight_a2a_agent = create_react_agent(
             model=model,
-            tools=[intersight_api_tool],  # list of tools for the agent
-            name="intersight_query_worker",
+            tools=[intersight_virtual_machine_agent],  # list of tools for the agent
+            name="virtual_machine_agent",
         )
-        logger.debug(f"Printing the prompt: {PROMPT1}")
+        logger.debug(f"Printing the supervisor prompt: {SUPERVISOR_PROMPT}")
         graph = create_supervisor(
             model=model,
             agents=[intersight_a2a_agent],  # worker agents list
-            prompt=PROMPT1,
+            prompt=SUPERVISOR_PROMPT,
             add_handoff_back_messages=False,
             output_mode="last_message",
         ).compile()

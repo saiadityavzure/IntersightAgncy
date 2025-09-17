@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
-from typing import TypedDict
+from typing import TypedDict, Annotated
 
 from langgraph.graph import END, START, StateGraph
 from langchain_core.messages import HumanMessage, SystemMessage
-
+from langchain_core.tools import tool, InjectedToolCallId
 from common.llm import get_llm
 from ioa_observe.sdk.decorators import agent, graph
 
@@ -22,6 +22,7 @@ class State(TypedDict):
 class IntersightDataAgent:
     def __init__(self):
         self.PRIMARY_NODE = "PrimaryNode"
+        self.tools = [self.create_vm]
         self._agent = self.build_graph()
 
     @graph(name="farm_graph")
@@ -31,49 +32,77 @@ class IntersightDataAgent:
         graph_builder.add_edge(START, self.PRIMARY_NODE)
         graph_builder.add_edge(self.PRIMARY_NODE, END)
         return graph_builder.compile()
+    
+    @tool("create_vm", return_direct=False)
+    def create_vm(
+        self,
+        vm_name_value: str,
+        vm_cpu_value: str,
+        vm_mem_value: str,
+        vm_network_value: str,
+        cluster_name_value: str,
+        tool_call_id: Annotated[str, InjectedToolCallId] = "",
+    ) -> dict:
+        """
+        Triggers a workflow in Intersight Cloud Orchestrator to provision a new Virtual Machine.
+        """
+        # TODO: Replace with real ICO API call
+        # e.g., requests.post(...); handle auth, errors, etc.
+        logger.debug(f"Inside the Tool: create_vm")
+        return {
+            # "ok": True,
+            # "action": "create_vm",
+            # "vm_name_value": vm_name_value,
+            # "vm_cpu_value": vm_cpu_value,
+            # "vm_mem_value": vm_mem_value,
+            # "vm_network_value": vm_network_value,
+            # "cluster_name_value": cluster_name_value,
+            "tool_call_id": tool_call_id,  # echoed so it’s visible in persisted state
+            "message": f"Requested VM '{vm_name_value}' in cluster '{cluster_name_value}'.",
+        }
+    
 
     async def primary_node(self, state: State):
-        """
-        Generates a coffee flavor profile based on the user's prompt using an LLM.
+        # """
+        # Generates a coffee flavor profile based on the user's prompt using an LLM.
 
-        This method takes the current state (which includes a user prompt),
-        sends it to a language model with a specialized system prompt, and returns
-        a brief flavor description based on location and season.
+        # This method takes the current state (which includes a user prompt),
+        # sends it to a language model with a specialized system prompt, and returns
+        # a brief flavor description based on location and season.
 
-        If the prompt doesn't contain enough context (e.g., missing location or season),
-        it returns an error response instead of a profile.
+        # If the prompt doesn't contain enough context (e.g., missing location or season),
+        # it returns an error response instead of a profile.
 
-        Args:
-            state (State): The LangGraph state object containing a 'prompt' key with user input.
+        # Args:
+        #     state (State): The LangGraph state object containing a 'prompt' key with user input.
 
-        Returns:
-            dict: A dictionary with either:
-                - "intersight_response" (str): A brief tasting profile if valid context was extracted.
-                - or an "error_type" and "error_message" if the input was insufficient.
-        """
+        # Returns:
+        #     dict: A dictionary with either:
+        #         - "intersight_response" (str): A brief tasting profile if valid context was extracted.
+        #         - or an "error_type" and "error_message" if the input was insufficient.
+        # """
         # session_start()
         user_prompt = state.get("prompt")
         logger.debug(f"Received user prompt: {user_prompt}")
 
         system_prompt = (
-            """You are a Cisco Intersight configuration and policy expert.
-
-The user will describe a question or scenario related to Intersight resources.
-
-Your job is to:
-1. Extract the resource_type (e.g., server profile, domain profile, policy, or firmware) and resource_name from the input if possible.
-2. Based on those, describe the expected configuration or operational profile of that resource.
-3. Respond with only a brief, precise summary (1–3 sentences).
- Use terminology relevant to Intersight such as attached policies, firmware version, boot order, or networking configuration.
-4. Respond with an empty response if no valid resource type or name is found.
- Do not include quotes or any placeholder."""
+"""
+You are the Virtual Machine Management Agent.
+Your role is strictly limited to provisioning Virtual Machines.
+    - You only handle requests to create Virtual Machines.
+    - You accept natural language input describing VM requirements such as CPU, memory, storage, and network.
+    - You must translate these requirements into a concrete VM creation action using the create_virtual_machine tool.
+    - Do not answer, explain, or discuss topics outside of Virtual Machine provisioning.
+    - If the request is not about VM creation, respond with: "This agent only supports Virtual Machine provisioning requests."
+"""
         )
 
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt)
         ]
-        response = get_llm().invoke(messages)
+        model = get_llm().bind_tools(self.tools)
+        response = model.invoke(messages)
         intersight_response = response.content
         logger.debug(f"LLM response: {intersight_response}")
         if not intersight_response.strip():

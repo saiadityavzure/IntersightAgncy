@@ -7,8 +7,8 @@ services:
     container_name: farm-server
     platform: linux/amd64
     environment:
-      - INTERSIGHT_AGENT_HOST=farm-server
-      - INTERSIGHT_AGENT_PORT=9999
+      - VM_AGENT_HOST=farm-server
+      - VM_AGENT_PORT=9999
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
@@ -53,8 +53,8 @@ services:
     container_name: exchange-server-corto
     platform: linux/amd64
     environment:
-      - INTERSIGHT_AGENT_HOST=farm-server
-      - INTERSIGHT_AGENT_PORT=9999
+      - VM_AGENT_HOST=farm-server
+      - VM_AGENT_PORT=9999
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
