@@ -19,7 +19,7 @@ logger = logging.getLogger("intersight.supervisor.main")
 load_dotenv()
 
 # Initialize the shared agntcy factory with tracing enabled
-shared.set_factory(AgntcyFactory("intersight.exchange", enable_tracing=True))
+shared.set_factory(AgntcyFactory("intersight.exchange", enable_tracing=False))
 
 app = FastAPI()
 # Add CORS middleware

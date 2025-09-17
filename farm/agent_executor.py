@@ -95,16 +95,16 @@ class IntersightAgentExecutor(AgentExecutor):
             if output.get("error_message") is not None and output.get("error_message") != "":
                 logger.error("Error in agent response: %s", output.get("error_message"))
                 message = new_agent_text_message(
-                    output.get("error_message", "Failed to generate flavor profile"),
+                    output.get("error_message", "Failed to generate Intersight Data"),
                 )
                 await event_queue.enqueue_event(message)
                 return
 
-            flavor = output.get("intersight_response", "No flavor profile returned")
+            flavor = output.get("intersight_response", "No intersight data returned")
             logger.info("Flavor profile generated: %s", flavor)
             await event_queue.enqueue_event(new_agent_text_message(flavor))
         except Exception as e:
-            logger.error(f'An error occurred while streaming the flavor profile response: {e}')
+            logger.error(f'An error occurred while streaming the intersight data response: {e}')
             raise ServerError(error=InternalError()) from e
         
     async def cancel(
