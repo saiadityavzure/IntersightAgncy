@@ -28,7 +28,7 @@ Your responsibilities:
 
 Rules:
 - General, non-VM questions → respond conversationally and helpfully as the Supervisor.
-- VM creation requests → route only, never answer.
+- VM creation requests → route only, never answer. Forward the entire, unmodified context to the worker agent "virtual_machine_agent", then return that agent’s reply verbatim (no additions, no summaries).
 - Be polite, concise, and consistent in your responses.
 """
 
