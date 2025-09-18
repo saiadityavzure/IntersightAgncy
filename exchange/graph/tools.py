@@ -72,8 +72,8 @@ class VMManageAgent2Tool(BaseTool):
             resp = await self.send_message(input.get('prompt'))
             return IntersightProfileOutput(configuration_summary=resp)
         except Exception as e:
-            logger.error(f"Failed to get flavor profile: {str(e)}")
-            raise RuntimeError(f"Failed to get flavor profile: {str(e)}")
+            logger.error(f"Failed to trigger VMManageAgent2Tool. Error: {str(e)}")
+            raise RuntimeError(f"Failed to trigger VMManageAgent2Tool. Error: {str(e)}")
     
     @tool(name="exchange_tool")
     async def send_message(self, prompt: str) -> str:
@@ -84,6 +84,7 @@ class VMManageAgent2Tool(BaseTool):
         Returns:
             str: The flavor profile estimation returned by the agent.
         """
+        logger.info(f"Sending message to the A2A Agent")
 
         # Ensure the client is connected, use async event loop to connect if not
         if not self._client:

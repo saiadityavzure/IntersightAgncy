@@ -17,53 +17,25 @@ from farm.card import AGENT_CARD
 
 logger = logging.getLogger("intersight.supervisor.graph")
 
-PROMPT1 = """You are a dual-purpose supervisor agent.
-
-Your behavior is strictly rule-based and must follow this logic:
-
-1. If the user prompt includes anything about Cisco Intersight server profiles, domain profiles, policies, 
-   or API queries:
-   - Route the task to worker agent 'intersight_query_worker'
-   - Use the associated tool 'intersight_api_tool'
-   - Do not attempt to answer or describe Intersight topics yourself.
-
-2. If the user prompt is NOT about Intersight (server profiles, domain profiles, policies, or API queries):
-   - Answer the question yourself.
-   - Provide the best possible explanation, reasoning, or solution using your knowledge.
-   - Be clear, detailed, and helpful in your response.
-
-3. If the worker agent returns control and the result is successful with no errors:
-   - Return an empty response and end the conversation.
-
-4. If the worker agent returns an error:
-   - Return the same error message verbatim.
-
-In short:
-- Cisco Intersight queries → must be routed only.  
-- All other queries → you must answer fully and provide the best possible response."""
-
 SUPERVISOR_PROMPT = """
 You are a Supervisor Agent.
-Your behavior is strictly rule-based and must follow this logic:
 
-1. If the user prompt is about Virtual Machines (VM creations):
-   - Route the task to the worker agent 'virtual_machine_agent'.
-   - Do not attempt to answer the query yourself.
+Your responsibilities:
+1. Engage with the user in natural conversation and provide general answers when the query is not related to Virtual Machine creation.
+2. If the user explicitly requests to **create a Virtual Machine** (e.g., mentions provisioning, launching, or setting up a VM), do not answer the request yourself. 
+   - Instead, forward the task to the worker agent: "virtual_machine_agent".
+   - Do not provide details or explanations about the VM creation process yourself.
 
-2. If the user prompt is NOT about Virtual Machines:
-   - Do not answer it yourself.
-   - Return the message: "This supervisor only supports Virtual Machine management."
-
-3. If the worker agent returns control and the result is successful with no errors:
-   - Return an empty response and end the conversation.
-
-4. If the worker agent returns an error:
-   - Return the same error message verbatim.
+Rules:
+- General, non-VM questions → respond conversationally and helpfully as the Supervisor.
+- VM creation requests → route only, never answer.
+- Be polite, concise, and consistent in your responses.
 """
 
 @agent(name="exchange_agent")
 class ExchangeGraph:
     def __init__(self):
+        logger.info("Initiating the build graph")
         self.graph = self.build_graph()
 
     @graph(name="exchange_graph")
@@ -92,15 +64,18 @@ class ExchangeGraph:
             name="virtual_machine_agent",
         )
         logger.debug(f"Printing the supervisor prompt: {SUPERVISOR_PROMPT}")
-        graph = create_supervisor(
+        graph_builder = create_supervisor(
             model=model,
             agents=[intersight_a2a_agent],  # worker agents list
             prompt=SUPERVISOR_PROMPT,
             add_handoff_back_messages=False,
             output_mode="last_message",
-        ).compile()
+        )
+        compiled_graph = graph_builder.compile()
         logger.debug("LangGraph supervisor created and compiled successfully.")
-        return graph
+        # mermaid_str = draw_mermaid(graph_builder)
+        # logger.debug("Graph structure in Mermaid:\n" + mermaid_str)
+        return compiled_graph
 
     async def serve(self, prompt: str):
         """

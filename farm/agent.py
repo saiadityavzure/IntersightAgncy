@@ -21,6 +21,7 @@ class State(TypedDict):
 @agent(name="intersight_data_agent")
 class IntersightDataAgent:
     def __init__(self):
+        logger.info(f"AGent in Virtual Machine Agent")
         self.PRIMARY_NODE = "PrimaryNode"
         self.tools = [self.create_vm]
         self._agent = self.build_graph()
@@ -48,7 +49,7 @@ class IntersightDataAgent:
         """
         # TODO: Replace with real ICO API call
         # e.g., requests.post(...); handle auth, errors, etc.
-        logger.debug(f"Inside the Tool: create_vm")
+        logger.info(f"Inside the Tool: create_vm")
         return {
             # "ok": True,
             # "action": "create_vm",

@@ -29,6 +29,7 @@ class IntersightAgentExecutor(AgentExecutor):
 
     """
     def __init__(self):
+        logger.info(f"Agent Executor in Virtual Machine Agent")
         self.agent = IntersightDataAgent()
 
     def _validate_request(self, context: RequestContext) -> JSONRPCResponse | None:
@@ -74,11 +75,15 @@ class IntersightAgentExecutor(AgentExecutor):
         logger.info("Received message request: %s", context.message)
 
         validation_error = self._validate_request(context)
+        logger.info(f"Validation Error: {validation_error}")
         if validation_error:
+            logger.info(f"There is validation error")
             await event_queue.enqueue_event(validation_error)
             return
         
         prompt = context.get_user_input()
+        logger.info(f"This is the prompt: {prompt}")
+
         if not prompt:
             logger.warning("Empty or missing prompt in user input.")
             await event_queue.enqueue_event(
@@ -86,11 +91,14 @@ class IntersightAgentExecutor(AgentExecutor):
             )
             return
         task = context.current_task
+        logger.info(f"Task is {task}")
         if not task:
+            logger.info(f"There is no task")
             task = new_task(context.message)
             await event_queue.enqueue_event(task)
 
         try:
+            logger.info(f"Prompt before invoking the Virtual Machine Agent: {prompt}")
             output = await self.agent.ainvoke(prompt)
             if output.get("error_message") is not None and output.get("error_message") != "":
                 logger.error("Error in agent response: %s", output.get("error_message"))
@@ -101,7 +109,7 @@ class IntersightAgentExecutor(AgentExecutor):
                 return
 
             flavor = output.get("intersight_response", "No intersight data returned")
-            logger.info("Flavor profile generated: %s", flavor)
+            logger.info("Virtual Machine data generated: %s", flavor)
             await event_queue.enqueue_event(new_agent_text_message(flavor))
         except Exception as e:
             logger.error(f'An error occurred while streaming the intersight data response: {e}')

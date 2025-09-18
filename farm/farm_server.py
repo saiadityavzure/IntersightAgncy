@@ -21,6 +21,7 @@ load_dotenv()
 factory = AgntcyFactory("intersight.farm_agent", enable_tracing=False)
 
 async def main():
+    logger.info(f"Triggering the Virtual Machine Agent")
     """
     Starts the farm agent server using the specified transport mechanism.
 

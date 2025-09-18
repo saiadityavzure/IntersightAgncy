@@ -6,6 +6,8 @@ services:
     # image: ghcr.io/agntcy/coffee-agntcy/corto-farm:latest
     container_name: farm-server
     platform: linux/amd64
+    volumes:
+      - .:/app
     environment:
       - VM_AGENT_HOST=farm-server
       - VM_AGENT_PORT=9999
@@ -52,6 +54,8 @@ services:
     #image: ghcr.io/agntcy/coffee-agntcy/corto-exchange:latest
     container_name: exchange-server-corto
     platform: linux/amd64
+    volumes:
+      - .:/app
     environment:
       - VM_AGENT_HOST=farm-server
       - VM_AGENT_PORT=9999
@@ -78,6 +82,8 @@ services:
     # image: ghcr.io/agntcy/coffee-agntcy/corto-ui:latest
     container_name: ui-corto
     platform: linux/amd64
+    # volumes:
+    #   - ./ui:/app
     environment:
       - VITE_EXCHANGE_APP_API_URL=http://127.0.0.1:8000
     depends_on:
