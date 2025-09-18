@@ -28,6 +28,7 @@ class IntersightDataAgent:
 
     @graph(name="farm_graph")
     def build_graph(self) -> StateGraph:
+        logger.info(f"Building the Graph for Virtual Machine Agent")
         graph_builder = StateGraph(State)
         graph_builder.add_node(self.PRIMARY_NODE, self.primary_node)
         graph_builder.add_edge(START, self.PRIMARY_NODE)
@@ -45,22 +46,38 @@ class IntersightDataAgent:
         tool_call_id: Annotated[str, InjectedToolCallId] = "",
     ) -> dict:
         """
-        Triggers a workflow in Intersight Cloud Orchestrator to provision a new Virtual Machine.
+        Create a new Virtual Machine.
+
+        This tool simulates the creation of a Virtual Machine in a target cluster.
+        In production, replace the placeholder implementation with an actual 
+        ICO API call (e.g., via `requests.post(...)`) including authentication 
+        and error handling.
+
+        Args:
+            vm_name_value (str): Name of the virtual machine to be created.
+            vm_cpu_value (str): Number of CPUs to allocate for the VM.
+            vm_mem_value (str): Amount of memory to allocate (e.g., '8GB').
+            vm_network_value (str): Network configuration or port group to attach.
+            cluster_name_value (str): Target cluster where the VM should be created.
+            tool_call_id (str, optional): Identifier for tracing/logging tool usage.
+
+        Returns:
+            dict: A structured response with the tool call ID and a confirmation message.
         """
-        # TODO: Replace with real ICO API call
-        # e.g., requests.post(...); handle auth, errors, etc.
-        logger.info(f"Inside the Tool: create_vm")
+        logger.info(
+            f"[create_vm] Request received for VM '{vm_name_value}' "
+            f"(CPU={vm_cpu_value}, MEM={vm_mem_value}, NET={vm_network_value}) "
+            f"in cluster '{cluster_name_value}'."
+        )
+
         return {
-            # "ok": True,
-            # "action": "create_vm",
-            # "vm_name_value": vm_name_value,
-            # "vm_cpu_value": vm_cpu_value,
-            # "vm_mem_value": vm_mem_value,
-            # "vm_network_value": vm_network_value,
-            # "cluster_name_value": cluster_name_value,
-            "tool_call_id": tool_call_id,  # echoed so it’s visible in persisted state
-            "message": f"Requested VM '{vm_name_value}' in cluster '{cluster_name_value}'.",
+            "tool_call_id": tool_call_id,  # Echoed back for state persistence/tracing
+            "message": (
+                f"Requested creation of VM '{vm_name_value}' in cluster '{cluster_name_value}' "
+                f"with {vm_cpu_value} CPU, {vm_mem_value} memory, and network '{vm_network_value}'."
+            ),
         }
+
     
 
     async def primary_node(self, state: State):
@@ -84,7 +101,7 @@ class IntersightDataAgent:
         # """
         # session_start()
         user_prompt = state.get("prompt")
-        logger.debug(f"Received user prompt: {user_prompt}")
+        logger.debug(f"Primary Node: Received user prompt: {user_prompt}")
 
         system_prompt = (
 """
@@ -102,10 +119,12 @@ Your role is strictly limited to provisioning Virtual Machines.
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt)
         ]
+        logger.info(f"Messages while invoking the llm: {messages}")
         model = get_llm().bind_tools(self.tools)
         response = model.invoke(messages)
+        logger.info(f"Raw Response from LLM: {response}")
         intersight_response = response.content
-        logger.debug(f"LLM response: {intersight_response}")
+        logger.debug(f"Primary Node: LLM response: {intersight_response}")
         if not intersight_response.strip():
             logger.warning("Could not extract valid Intersight Response from the user prompt.")
             return {

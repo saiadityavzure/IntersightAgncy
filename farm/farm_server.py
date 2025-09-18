@@ -14,14 +14,15 @@ from agent_executor import IntersightAgentExecutor
 from card import AGENT_CARD
 from config.config import VM_AGENT_HOST, VM_AGENT_PORT
 from config.config import DEFAULT_MESSAGE_TRANSPORT, TRANSPORT_SERVER_ENDPOINT
-
+import logging
 load_dotenv()
+logger = logging.getLogger("intersight.intersight_data_agent.farm_server")
 
 # Initialize a multi-protocol, multi-transport gateway factory.
 factory = AgntcyFactory("intersight.farm_agent", enable_tracing=False)
 
 async def main():
-    logger.info(f"Triggering the Virtual Machine Agent")
+    logger.info(f"farm_server: Triggering the Virtual Machine Agent")
     """
     Starts the farm agent server using the specified transport mechanism.
 
@@ -77,6 +78,6 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\nShutting down gracefully on keyboard interrupt.")
+        logger.info("\nfarm_server: Shutting down gracefully on keyboard interrupt.")
     except Exception as e:
-        print(f"Error occurred: {e}")
+        logger.info(f"farm_server: Error occurred: {e}")

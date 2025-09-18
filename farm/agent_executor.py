@@ -100,6 +100,7 @@ class IntersightAgentExecutor(AgentExecutor):
         try:
             logger.info(f"Prompt before invoking the Virtual Machine Agent: {prompt}")
             output = await self.agent.ainvoke(prompt)
+            logger.info(f"Output after invoking the Virtual Machine Agent: {output}")
             if output.get("error_message") is not None and output.get("error_message") != "":
                 logger.error("Error in agent response: %s", output.get("error_message"))
                 message = new_agent_text_message(
