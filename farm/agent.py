@@ -36,10 +36,11 @@ from intersight.model.workflow_workflow_info import WorkflowWorkflowInfo
 from intersight.model.mo_base_mo_relationship import MoBaseMoRelationship
 from intersight.model.workflow_workflow_definition_relationship import WorkflowWorkflowDefinitionRelationship
 import intersight
+from intersight.api import iam_api, workflow_api
 import traceback
 import os
 
-INTERSIGHT_API_KEY = "68701e3f75646133015b674b/687302317564613201174cc1/687449ad756461320117b218"
+INTERSIGHT_API_KEY = "68701e3f75646133015b674b/687302317564613201174cc1/68cd97d6756461320130eeda"
 INTERSIGHT_SECRET_FILE_PATH = os.getenv(
     "INTERSIGHT_SECRET_FILE_PATH",
     os.path.join(os.path.dirname(__file__), "NSDev01-SecretKey.txt")  # fallback
@@ -81,6 +82,7 @@ def get_intersight_api_client(api_key_id, api_secret_path, endpoint):
                 ]
             )
         )
+        logger.info(f"Success in get_intersight_api_client")
     except Exception as err:
         logger.exception(
             "Intersight API connection is not successful. Reason: Unauthorized", stack_info=True)
@@ -89,10 +91,10 @@ def get_intersight_api_client(api_key_id, api_secret_path, endpoint):
 def intersight_client_connection():  
     logger.info("Extracting Intersight_client_connection.")
     api_intersight_client = get_intersight_api_client(INTERSIGHT_API_KEY, INTERSIGHT_SECRET_FILE_PATH, endpoint="https://www.intersight.com")
-
+    logger.debug(f"API Client in intersight_client_connection: {api_intersight_client}")
     # Perform a lightweight test to validate credentials
     try:
-        account_api = intersight.api.iam_api.IamApi(api_intersight_client)
+        account_api = iam_api.IamApi(api_intersight_client)
         account_info = account_api.get_iam_account_list(top=1)
         logger.info("✅ Intersight client authentication successful.")
     except intersight.exceptions.ApiException as e:
@@ -138,7 +140,7 @@ def triggerVMIcoWorkflow(vm_name_value, vm_cpu_value, vm_mem_value, vm_network_v
         try:
             logger.info(f"Name in the MO input: {mo.input['VM_Name']}")
             logger.info(f"Entire MO: {mo}")
-            api_instance = intersight.api.workflow_api.WorkflowApi(api_intersight_client)
+            api_instance = workflow_api.WorkflowApi(api_intersight_client)
             workflow = api_instance.create_workflow_workflow_info(mo)
             logger.info(f"Workflow: {workflow}")
             if workflow.get('WorkflowStatus') == 'Waiting' or workflow.get('workflow_status') == 'Waiting':
@@ -189,6 +191,7 @@ def create_vm(
             vm_cpu_value=vm_cpu_value,
             vm_mem_value=vm_mem_value,
             vm_network_value=vm_network_value,
+            cluster_name_value=cluster_name_value
         )
         
         logger.info("Successfully triggered Create VM workflow for VM=%s", vm_name_value)
