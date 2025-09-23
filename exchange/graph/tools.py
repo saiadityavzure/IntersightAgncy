@@ -31,7 +31,10 @@ class VMManageAgent2Tool(BaseTool):
     This tool sends a prompt to the A2A agent and manages Virtual Machine operations.
     """
     name: str = "virtual_machine_management_agent"
-    description: str = "Handles Virtual Machine management tasks such as only provisioning a Vitual Machine(VM)."
+    description: str = (
+        "Routes Virtual Machine tasks to a remote A2A agent. "
+        "Supports creating VMs and creating VM snapshots from natural-language requests."
+    )
 
     _client = PrivateAttr()
     
@@ -78,22 +81,34 @@ class VMManageAgent2Tool(BaseTool):
     @tool(name="exchange_tool")
     async def send_message(self, prompt: str) -> str:
         """
-        Sends a message to the flavor profile farm agent via A2A, specifically invoking its `estimate_flavor` skill.
+        Sends a message to the remote VM A2A agent. Auto-selects skill:
+        - 'create_vm_snapshot' if the prompt indicates snapshot intent
+        - otherwise 'create_virtual_machine'
         Args:
             prompt (str): The user input prompt to send to the agent.
         Returns:
-            str: The flavor profile estimation returned by the agent.
+            str: The text response returned by the agent.
         """
-        logger.info(f"Sending message to the A2A Agent")
+        logger.info("Sending message to the A2A Agent")
 
         # Ensure the client is connected, use async event loop to connect if not
         if not self._client:
             await self._connect()
 
+        # -------- Skill auto-selection (lightweight heuristic) ----------
+        lower = prompt.lower()
+        snapshot_keywords = (
+            "snapshot", "take snapshot", "create snapshot", "vm snapshot",
+            "snap", "baseline", "pre-patch", "pre upgrade", "pre-upgrade"
+        )
+        is_snapshot = any(k in lower for k in snapshot_keywords)
+        skill_id = "create_vm_snapshot" if is_snapshot else "create_virtual_machine"
+        logger.info(f"Selected skill_id='{skill_id}' based on prompt intent")
+
         request = SendMessageRequest(
             id=str(uuid4()),
             params=MessageSendParams(
-                skill_id="create_virtual_machine",
+                skill_id=skill_id,
                 sender_id="vm-supervisor-agent",
                 receiver_id="virtual-machine-agent",
                 message=Message(
@@ -114,6 +129,6 @@ class VMManageAgent2Tool(BaseTool):
             if hasattr(part, "text"):
                 return part.text
         elif response.root.error:
-            raise Exception(f"A2A error: {response.error.message}")
+            raise Exception(f"A2A error: {response.root.error.message}")
 
         raise Exception("Unknown response type")

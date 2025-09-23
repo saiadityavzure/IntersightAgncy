@@ -19,17 +19,54 @@ class State(TypedDict):
     error_message: str
     intersight_response: str
 
-SYSTEM_PROMPT = """You are the Virtual Machine Management Agent.
-Your role is strictly limited to provisioning Virtual Machines.
+# SYSTEM_PROMPT = """You are the Virtual Machine Management Agent.
+# Your role is strictly limited to provisioning Virtual Machines.
 
-Rules:
-- Only handle requests to create Virtual Machines.
-- Accept natural language requirements (CPU, memory, storage, network, cluster, VM name).
-- Translate them into a concrete VM creation action by calling the `create_vm` tool.
-- Do not discuss topics outside VM provisioning.
-- If the request is not about VM creation, reply exactly:
-  "This agent only supports Virtual Machine provisioning requests."
+# Rules:
+# - Only handle requests to create Virtual Machines.
+# - Accept natural language requirements (CPU, memory, storage, network, cluster, VM name).
+# - Translate them into a concrete VM creation action by calling the `create_vm` tool.
+# - Do not discuss topics outside VM provisioning.
+# - If the request is not about VM creation, reply exactly:
+#   "This agent only supports Virtual Machine provisioning requests."
+# """
+
+
+SYSTEM_PROMPT = """You are the Virtual Machine Management Agent.
+
+Your scope:
+- Provisioning new Virtual Machines.
+- Creating snapshots of existing Virtual Machines.
+
+Instructions:
+1. Decide which action the user wants:
+   - Provision a new Virtual Machine.
+   - Create a snapshot of an existing Virtual Machine.
+
+2. Use the correct tool with the required parameters:
+
+- Tool: `create_vm`
+  Parameters:
+    - vm_name_value (str): Name of the VM.
+    - vm_cpu_value (str): Number of CPUs.
+    - vm_mem_value (str): Amount of memory.
+    - vm_network_value (str): Network configuration.
+    - cluster_name_value (str): Target cluster.
+
+- Tool: `create_vm_snapshot`
+  Parameters:
+    - vm_name_value (str): Name of the VM.
+    - vm_snapshot_name_value (str): Name of the snapshot.
+    - vm_snapshot_desc_value (str): Description of the snapshot.
+
+3. Accept natural language requests, extract the details, and map them to the correct tool call.
+
+4. Do NOT handle requests outside VM provisioning or snapshot creation.
+
+5. If the request is unrelated, respond with exactly:
+   "This agent only supports Virtual Machine provisioning and snapshot requests."
 """
+
 
 import subprocess
 from intersight.model.workflow_workflow_info import WorkflowWorkflowInfo
@@ -211,12 +248,100 @@ def create_vm(
             "status": "error",
             "message": f"Failed to trigger VM creation for '{vm_name_value}': {str(e)}",
         }
+    
+
+def CreateVMSnapshot(vm_name_value, vm_snapshot_name_value, vm_snapshot_desc_value):
+        logger.info("Executing CreateVMSnapshot...")
+        """Trigger the ICO Workflow in Intersight to create a VM."""
+        api_intersight_client = intersight_client_connection()
+
+        mo = WorkflowWorkflowInfo(
+            action="Start",
+            associated_object=MoBaseMoRelationship(
+                class_id="mo.MoRef",
+                moid="68701e436972653101590c8e",
+                object_type="organization.Organization"
+            ),
+            input={
+                 "VmName": vm_name_value, 
+                 "SnapshotName": vm_snapshot_name_value,
+                 "Description": vm_snapshot_desc_value,
+               }, 
+            name="CreateVMSnapshot", 
+            workflow_definition=WorkflowWorkflowDefinitionRelationship(
+                class_id="mo.MoRef",
+                moid="687089ff696f6e32017400b3",
+                object_type="workflow.WorkflowDefinition"
+            )
+        )
+        try:
+            logger.info(f"Entire MO: {mo}")
+            api_instance = workflow_api.WorkflowApi(api_intersight_client)
+            workflow = api_instance.create_workflow_workflow_info(mo)
+            logger.info(f"Workflow: {workflow}")
+            if workflow.get('WorkflowStatus') == 'Waiting' or workflow.get('workflow_status') == 'Waiting':
+                logger.info("Workflow is in 'Waiting' state. Initiating background monitoring...")
+
+                # Start monitoring in a background process
+                # script_path = os.path.join(settings.BASE_DIR, 'advensisapp', 'dao', 'TriggerWfMonitor.py')
+                # subprocess.Popen([
+                #     "python3", script_path, 
+                #     INTERSIGHT_API_KEY, 
+                #     INTERSIGHT_SECRET_FILE_PATH, 
+                #     workflow.get('moid')
+                # ])
+
+                logger.info(f"Monitoring started for workflow MOID: {workflow.get('moid')} in the background.")
+                logger.info("______Getting outside triggerVMIcoWorkflow...")
+                return None, {"message": "Workflow created successfully and is in 'Waiting' status."}
+            else:
+                logger.info(f"Workflow created but is in unexpected status: {workflow.get('WorkflowStatus')}")
+                logger.info("______Getting outside triggerVMIcoWorkflow...")
+                return None, {"message": f"Workflow created, but current status is: {workflow.get('WorkflowStatus')}"}
+                
+        except intersight.OpenApiException as e:
+            logger.error(e)
+            return None, {"message": "Unable to add the network. Please review the provided details."}
+        
+@tool("create_vm_snapshot", return_direct=False)
+def create_vm_snapshot(
+    vm_name_value: str,
+    vm_snapshot_name_value: str,
+    vm_snapshot_desc_value: str,
+) -> dict:
+    """
+    Triggers a workflow in Intersight Cloud Orchestrator to create a snapshot
+    for an existing Virtual Machine.
+    """
+    try:
+        logger.info(
+            "Triggering Create VM Snapshot Workflow: [create_vm_snapshot] "
+            "vm=%s snapshot=%s desc=%s",
+            vm_name_value, vm_snapshot_name_value, vm_snapshot_desc_value
+        )
+
+        result = CreateVMSnapshot(
+            vm_name_value=vm_name_value,
+            vm_snapshot_name_value=vm_snapshot_name_value,
+            vm_snapshot_desc_value=vm_snapshot_desc_value
+        )
+
+        logger.info("Snapshot workflow result: %s", result)
+        return {
+                "status": "success",
+                "message": "Workflow created successfully and is in 'Waiting' status."
+            }
+
+    except Exception as e:
+        logger.error("Error triggering Create VM Snapshot workflow: %s", str(e), exc_info=True)
+        return {"status": "error", "message": "Failed to create snapshot. Please review the provided details."}
+
 
 @agent(name="intersight_data_agent")
 class IntersightDataAgent:
     def __init__(self):
         logger.info(f"AGent in Virtual Machine Agent")
-        self.tools = [create_vm]
+        self.tools = [create_vm, create_vm_snapshot]
         self._agent = self.build_graph()
     
     

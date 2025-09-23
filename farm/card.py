@@ -8,30 +8,82 @@ from a2a.types import (
 from config.config import VM_AGENT_HOST, VM_AGENT_PORT
 
 
-AGENT_SKILL = AgentSkill(
+# AGENT_SKILL = AgentSkill(
+#     id="create_virtual_machine",
+#     name="Create Virtual Machine",
+#     description="Handles provisioning operations of Virtual Machines. Takes natural language input describing VM requirements such as CPU, memory, storage, and network, and translates them into a concrete VM creation action.",
+#     tags=["virtual-machine", "vm", "create"],
+#     examples=[
+#         "Create a virtual machine with 4 CPUs, 16GB memory, and 200GB storage.",
+#         "Provision a new VM called 'Test-VM' with 2 CPUs and 8GB RAM.",
+#         "Spin up a VM for Ubuntu with 2 cores, 4GB RAM, and default network settings.",
+#         "Deploy a Windows VM with 8GB RAM and 100GB disk.",
+#         "Create a VM in cluster Alpha with 6 CPUs, 32GB memory, and 500GB storage."
+#     ]
+# )
+
+CREATE_VM_SKILL = AgentSkill(
     id="create_virtual_machine",
     name="Create Virtual Machine",
-    description="Handles provisioning operations of Virtual Machines. Takes natural language input describing VM requirements such as CPU, memory, storage, and network, and translates them into a concrete VM creation action.",
-    tags=["virtual-machine", "vm", "create"],
+    description=(
+        "Provision a new Virtual Machine given natural-language requirements "
+        "(name, CPU, memory, storage, network, cluster). Maps requests to the "
+        "`create_vm` tool."
+    ),
+    tags=["virtual-machine", "vm", "provision", "create"],
     examples=[
-        "Create a virtual machine with 4 CPUs, 16GB memory, and 200GB storage.",
-        "Provision a new VM called 'Test-VM' with 2 CPUs and 8GB RAM.",
-        "Spin up a VM for Ubuntu with 2 cores, 4GB RAM, and default network settings.",
-        "Deploy a Windows VM with 8GB RAM and 100GB disk.",
-        "Create a VM in cluster Alpha with 6 CPUs, 32GB memory, and 500GB storage."
-    ]
+        "Create a VM named 'Test-VM' with 2 CPUs, 4GB RAM, on VLAN100 in cluster DevCluster.",
+        "Provision a VM 'api-node-1' with 4 vCPU, 16GB memory, 100GB disk in cluster Alpha.",
+        "Spin up Ubuntu VM 'lab-ubuntu' (2 cores, 8GB RAM, default network).",
+    ],
 )
 
+
+CREATE_VM_SNAPSHOT_SKILL = AgentSkill(
+    id="create_vm_snapshot",
+    name="Create VM Snapshot",
+    description=(
+        "Create a snapshot for an existing Virtual Machine. Accepts VM name, "
+        "snapshot name, and an optional description. Maps requests to the "
+        "`create_vm_snapshot` tool."
+    ),
+    tags=["virtual-machine", "vm", "snapshot", "backup"],
+    examples=[
+        "Take a snapshot of VM 'Test-VM' called 'baseline-2025-09-23' with description 'pre-upgrade'.",
+        "Create a snapshot 'pre-patch' for VM 'api-node-1'.",
+        "Snapshot VM 'lab-ubuntu' named 'snap1' (desc: initial baseline).",
+    ],
+)
+
+
+# AGENT_CARD = AgentCard(
+#     name='Virtual Machine Management Agent',
+#     id='virtual-machine-agent',
+#     description="An AI agent that manages Virtual Machines. It supports tasks such as only provisioning VMs based on user input. It interprets natural language descriptions of VM requirements and uses the Create Virtual Machine tool to execute the request.",
+#     url=f'http://{VM_AGENT_HOST}:{VM_AGENT_PORT}/',
+#     version='1.0.0',
+#     defaultInputModes=["text"],
+#     defaultOutputModes=["text"],
+#     capabilities=AgentCapabilities(streaming=True),
+#     skills=[AGENT_SKILL],
+#     supportsAuthenticatedExtendedCard=False,
+# )
+
 AGENT_CARD = AgentCard(
-    name='Virtual Machine Management Agent',
-    id='virtual-machine-agent',
-    description="An AI agent that manages Virtual Machines. It supports tasks such as only provisioning VMs based on user input. It interprets natural language descriptions of VM requirements and uses the Create Virtual Machine tool to execute the request.",
-    url=f'http://{VM_AGENT_HOST}:{VM_AGENT_PORT}/',
-    version='1.0.0',
+    name="Virtual Machine Management Agent",
+    id="virtual-machine-agent",
+    description=(
+        "A2A-compatible agent for VMware/cluster-backed Virtual Machine lifecycle tasks. "
+        "Supports creating VMs and creating VM snapshots from natural-language instructions. "
+        "Externally exposes actions via the Agent Card for discovery and routing by A2A clients."
+    ),
+    url=f"http://{VM_AGENT_HOST}:{VM_AGENT_PORT}/",
+    version="1.0.0",
     defaultInputModes=["text"],
     defaultOutputModes=["text"],
+    # Streaming is handy for tool progress / logs if your transport supports it.
     capabilities=AgentCapabilities(streaming=True),
-    skills=[AGENT_SKILL],
+    skills=[CREATE_VM_SKILL, CREATE_VM_SNAPSHOT_SKILL],
     supportsAuthenticatedExtendedCard=False,
 )
 
